@@ -1,11 +1,21 @@
 from fastapi import FastAPI, HTTPException, Depends
 from sqlalchemy.orm import Session
+from starlette.middleware.cors import CORSMiddleware
+
 from database import SessionLocal, UsuarioDB, DispositivoDB, RegistroDB
 from models import Usuario, Dispositivo, Registro
 from uuid import uuid4
 from typing import List
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Permite todos los orígenes
+    allow_credentials=True,
+    allow_methods=["*"],  # Permite todos los métodos (GET, POST, etc.)
+    allow_headers=["*"],  # Permite todos los encabezados
+)
 
 # Dependencia para obtener la sesión de la BD
 def get_db():
@@ -57,11 +67,10 @@ def obtener_dispositivos(db: Session = Depends(get_db)):
 @app.post("/api/dispositivos/", response_model=Dispositivo)
 def crear_dispositivo(dispositivo: Dispositivo, db: Session = Depends(get_db)):
     usuario_existente = db.query(UsuarioDB).filter(UsuarioDB.id == dispositivo.usuario_id).first()
-    print("************HHHHHHHHHHHHHHHHHHHHHHHHHHHHHH************")
+
     if not usuario_existente:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
-    print("************YYYYYYYYYYYYYYYYYYYYYYYYYYYYYY************")
     nuevo_dispositivo = DispositivoDB(active=dispositivo.active, nombre=dispositivo.nombre, usuario_id=dispositivo.usuario_id)
     db.add(nuevo_dispositivo)
     db.commit()
@@ -80,6 +89,16 @@ def obtener_dispositivo(dispositivo_id: int, db: Session = Depends(get_db)):
 def obtener_registros_por_dispositivo(dispositivo_id: int, db: Session = Depends(get_db)):
     # Consultamos los registros filtrados por el dispositivo_id
     registros = db.query(RegistroDB).filter(RegistroDB.dispositivo_id == dispositivo_id).all()
+
+    if not registros:
+        raise HTTPException(status_code=404, detail="No se encontraron registros para este dispositivo")
+
+    return registros
+
+@app.get("/api/registros/dispositivo_1/{dispositivo_id}", response_model=List[Registro])
+def obtener_registros_por_dispositivo(dispositivo_id: int, db: Session = Depends(get_db)):
+    # Consultamos los registros filtrados por el dispositivo_id
+    registros = db.query(RegistroDB).filter(RegistroDB.dispositivo_id == dispositivo_id).first()
 
     if not registros:
         raise HTTPException(status_code=404, detail="No se encontraron registros para este dispositivo")
