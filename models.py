@@ -4,20 +4,20 @@ from datetime import datetime
 from typing import Optional
 
 class Usuario(BaseModel):
-    id: Optional[UUID] = None
+    id: Optional[int] = None
     username: str
     password: str
     email: Optional[str] = None
 
 class Dispositivo(BaseModel):
-    id: Optional[UUID] = None
-    nombre: str
+    id: Optional[int] = None
+    nombre: Optional[str]
     active: bool = False
-    usuario_id: Optional[UUID] = None
+    usuario_id: Optional[int] = None
 
 
 class Registro(BaseModel):
-    id: Optional[UUID] = None
+    id: Optional[int] = None
     fecha: datetime
     coordenadas: str
-    dispositivo_id: UUID
+    dispositivo_id: int
