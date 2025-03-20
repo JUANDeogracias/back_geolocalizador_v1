@@ -76,12 +76,15 @@ def obtener_dispositivo(dispositivo_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Dispositivo no encontrado")
     return dispositivo
 
-@app.get("/api/registro_dispositivo/{dispositivo_id}", response_model=Dispositivo)
-def obtener_registro_dispositivo(dispositivo_id: int, db: Session = Depends(get_db)):
-    dispositivo = db.query(DispositivoDB).filter(DispositivoDB.id == dispositivo_id).first()
-    if not dispositivo:
-        raise HTTPException(status_code=404, detail="Dispositivo no encontrado")
-    return dispositivo.registros
+@app.get("/api/registros/dispositivo/{dispositivo_id}", response_model=List[Registro])
+def obtener_registros_por_dispositivo(dispositivo_id: int, db: Session = Depends(get_db)):
+    # Consultamos los registros filtrados por el dispositivo_id
+    registros = db.query(RegistroDB).filter(RegistroDB.dispositivo_id == dispositivo_id).all()
+
+    if not registros:
+        raise HTTPException(status_code=404, detail="No se encontraron registros para este dispositivo")
+
+    return registros
 
 '''--------------------- REGISTROS ---------------------'''
 
