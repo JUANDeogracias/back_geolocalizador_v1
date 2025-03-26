@@ -3,12 +3,14 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 from uuid import uuid4
 import datetime
 
+
 DATABASE_URL = "sqlite:///./gps3_data.db"
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 
 # Crear sesión
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
+
 
 class UsuarioDB(Base):
     __tablename__ = "usuarios"

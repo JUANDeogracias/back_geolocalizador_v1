@@ -9,6 +9,10 @@ class Usuario(BaseModel):
     password: str
     email: Optional[str] = None
 
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
 class Dispositivo(BaseModel):
     id: Optional[int] = None
     nombre: Optional[str]
