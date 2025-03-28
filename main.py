@@ -9,6 +9,7 @@ from jose import JWTError, jwt
 from fastapi.security import OAuth2PasswordBearer
 from typing import List, Optional
 import datetime
+import re
 
 app = FastAPI()
 
@@ -163,19 +164,34 @@ def obtener_registros(db: Session = Depends(get_db)):
 def formateo(datos_gnss):
     try:
         print(f"Datos GNSS recibidos: {datos_gnss}")  # Debugging
-        partes = datos_gnss.split(',')
 
-        if len(partes) < 4:  # No necesitamos fecha ni hora
-            raise Exception("Formato de datos GNSS incorrecto.")
+        # Eliminar el prefijo "+CGPSINFO:" si está presente
+        datos_gnss = re.sub(r"^\+CGPSINFO:\s*", "", datos_gnss)
 
-        lat = partes[0].replace("+CGPSINFO:", "").strip()
-        ns = partes[1].strip()
-        lon = partes[2].strip()
-        ew = partes[3].strip()
+        partes = datos_gnss.split(',')[:4]  # Solo tomamos las primeras 4 partes (lat, N/S, lon, E/W)
 
-        coordenadas = f"{lat},{ns},{lon},{ew}"
+        if len(partes) < 4:
+            raise ValueError("Formato de datos GNSS incorrecto.")
 
-        print(f"Coordenadas: {coordenadas}")  # Debugging
+        lat_dmm, ns, lon_dmm, ew = map(str.strip, partes)
+
+        # Convertir latitud
+        lat_grados = int(lat_dmm[:2])
+        lat_minutos = float(lat_dmm[2:]) / 60
+        lat_decimal = lat_grados + lat_minutos
+        if ns == 'S':
+            lat_decimal *= -1
+
+        # Convertir longitud
+        lon_grados = int(lon_dmm[:3])
+        lon_minutos = float(lon_dmm[3:]) / 60
+        lon_decimal = lon_grados + lon_minutos
+        if ew == 'W':
+            lon_decimal *= -1
+
+        coordenadas = f"{lat_decimal},{lon_decimal}"
+
+        print(f"Coordenadas convertidas: {coordenadas}")  # Debugging
         return coordenadas
 
     except Exception as e:
