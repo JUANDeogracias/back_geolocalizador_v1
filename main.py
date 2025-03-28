@@ -158,14 +158,53 @@ def obtener_dispositivo(dispositivo_id: int, db: Session = Depends(get_db)):
 def obtener_registros(db: Session = Depends(get_db)):
     return db.query(RegistroDB).all()
 
+
+# Funcion para formatear la fecha
+def formateo(datos_gnss):
+    try:
+        print(f"Datos GNSS recibidos: {datos_gnss}")  # Debugging
+        partes = datos_gnss.split(',')
+
+        if len(partes) < 4:  # No necesitamos fecha ni hora
+            raise Exception("Formato de datos GNSS incorrecto.")
+
+        lat = partes[0].replace("+CGPSINFO:", "").strip()
+        ns = partes[1].strip()
+        lon = partes[2].strip()
+        ew = partes[3].strip()
+
+        coordenadas = f"{lat},{ns},{lon},{ew}"
+
+        print(f"Coordenadas: {coordenadas}")  # Debugging
+        return coordenadas
+
+    except Exception as e:
+        print("Fallo en el formateo:", e)
+        return None
+
+
 @app.post("/api/registros/", response_model=Registro)
 def crear_registro(registro: Registro, db: Session = Depends(get_db)):
     dispositivo_existente = db.query(DispositivoDB).filter(DispositivoDB.id == registro.dispositivo_id).first()
     if not dispositivo_existente:
         raise HTTPException(status_code=404, detail="Dispositivo no encontrado")
 
-    nuevo_registro = RegistroDB(fecha=registro.fecha, coordenadas=registro.coordenadas, dispositivo_id=registro.dispositivo_id)
+    if not registro.coordenadas:
+        raise HTTPException(status_code=400, detail="Datos GNSS no proporcionados")
+
+    # Llamamos a la función formateo para obtener las coordenadas
+    coordenadas = formateo(registro.coordenadas)
+
+    if coordenadas is None:
+        raise HTTPException(status_code=400, detail="Datos GNSS inválidos o no disponibles")
+
+    nuevo_registro = RegistroDB(
+        coordenadas=coordenadas,  # Solo almacenamos las coordenadas
+        dispositivo_id=registro.dispositivo_id
+    )
+
     db.add(nuevo_registro)
     db.commit()
     db.refresh(nuevo_registro)
     return nuevo_registro
+

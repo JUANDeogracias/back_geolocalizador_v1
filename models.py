@@ -3,6 +3,7 @@ from uuid import UUID, uuid4
 from datetime import datetime
 from typing import Optional
 
+
 class Usuario(BaseModel):
     id: Optional[int] = None
     username: str
@@ -22,6 +23,6 @@ class Dispositivo(BaseModel):
 
 class Registro(BaseModel):
     id: Optional[int] = None
-    fecha: datetime
+    fecha: Optional[datetime] = None
     coordenadas: str
     dispositivo_id: int
